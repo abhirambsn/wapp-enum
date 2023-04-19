@@ -1,5 +1,6 @@
 import socket
 import threading
+import sys
 
 class ThreadWithReturnValue(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
@@ -48,6 +49,10 @@ def run(host, ports_list=[80, 443], n_threads=1):
     threads = []
     
     t_count = n_threads
+
+    if (len(ports_list) <= 0):
+        print("[+] No Ports are Open!!")
+        sys.exit(0)
     if len(ports_list) < n_threads:
         t_count = len(ports_list)
 
