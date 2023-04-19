@@ -1,6 +1,9 @@
 import threading
 import requests
 import sys
+import os
+
+file_lock = threading.Lock()
 
 def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
     try:
@@ -15,20 +18,26 @@ def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
         else:
             return False, None, None
     except requests.ConnectionError as e:
-        print(f"Connection Error")
+        print(f"[x] Connection Error")
         sys.exit(-1)
         
 
-def threaded_request(thread_index, host, wordlist, success_codes=[200,301,302], filter_codes=[], batch_size=100, start=0):
+def threaded_request(thread_index, res_file, host, wordlist, success_codes=[200,301,302], filter_codes=[], batch_size=100, start=0):
     batch = wordlist[start: start+batch_size]
-    print(f"Thread Index: {thread_index} Starting from {start} to {start+batch_size}")
     for path in batch:
         path_striped = path.strip('\n')
         req = request_url(host, path_striped, success_codes, filter_codes)
         if req[0]:
-            print(f"[+] Found: {req[2]}\tStatus Code: {req[1]}")
+            print(f"[+][Thread: {thread_index}] Found: {req[2]}\tStatus Code: {req[1]}")
+            file_lock.acquire()
+            res_file.write(f"{req[2]}\t\tCode:{req[1]}\r\n")
+            file_lock.release()
 
 def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filter_codes=[]):
+    if not os.path.exists(os.getcwd() + "/directory_enum"):
+        os.mkdir(os.getcwd() + "/directory_enum")
+    mode = 'a' if os.path.exists(os.getcwd() + f"/directory_enum/result_{port}.txt") else 'w'
+    f = open(f"directory_enum/result_{port}.txt", mode)
     wordlist_file = open(wordlist, 'r').readlines()
     batch_size = len(wordlist_file) // n_threads
     if batch_size < 1:
@@ -36,11 +45,13 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
     thread_pool = []
     for i in range(n_threads):
         url = host + ":" + str(port)
-        thread = threading.Thread(target=threaded_request, args=(i+1, url, wordlist_file, success_codes, filter_codes, batch_size, len(wordlist_file)*i))
+        thread = threading.Thread(target=threaded_request, args=(i+1, f, url, wordlist_file, success_codes, filter_codes, batch_size, len(wordlist_file)*i))
         thread_pool.append(thread)
     
     for thread in thread_pool:
         thread.start()
         thread.join()
     
+    f.close()
     print(f"[-] Processed {len(wordlist)} paths")
+    print(f"[+] Directory Enumeration Done")

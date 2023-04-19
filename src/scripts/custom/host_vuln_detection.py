@@ -13,4 +13,4 @@ def run(host, port):
     output_file = f"nikto_{port}.scan"
     with open(f"nikto/{output_file}", 'w') as writer:
         writer.write(stdout.decode('utf-8'))
-    print(f"[+] Scan Done, saved to {output_file}")
+    print(f"[+] Scan Done, Results are saved to: {output_file}")

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Necessary Imports
 import threading
 import os
@@ -34,7 +36,7 @@ def port_thread(thread_idx, port, kwargs):
             p_thread.start()
             p_thread.join()
     except Exception as e:
-        print(f"[!] Error: {e}")
+        print(f"[x] Error: {e}")
         sys.exit(1)
 
 def chk_docker():
@@ -43,24 +45,12 @@ def chk_docker():
     return False
 
 def main():
-      
-
-    # _, file = nmap_module.create_ps(ip, project_name)
-    # ports = nmap_module.get_ports(file)
-    # web_ports = web_server_check_module.check_webserver("127.0.0.1", ports, 4)
-
-    # threads = []
-    
-    # for vport in web_ports:
-    #     thread = threading.Thread(target=port_thread, args=(len(threads)+1, vport, wordlist))
-    #     threads.append(thread)
-    
-    # for thread in threads:
-    #     thread.start()
-    #     thread.join()
+    # Register All Scripts
     register_default_scripts()
     register_custom_scripts()
 
+    # Parse Data
+    # TODO: Take inputs in the form of arguments
     project_name  = input("Enter Project Name:")
     ip = input("Enter IP Address of the WebApp:")
     wordlist = input("Enter Wordlist Path:")
@@ -93,7 +83,6 @@ def main():
     # Run Default Scripts in Sequence
     for default_script in default_scripts:
         retval = default_script.run(**kwargs)
-        print(f"Return Value Received from {default_script.name} is : {retval}")
         if retval is not None:
             kwargs.update(retval)
 

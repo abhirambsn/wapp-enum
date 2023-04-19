@@ -2,3 +2,4 @@
 test_wordlist.txt
 test/
 *.csv
+.vscode/

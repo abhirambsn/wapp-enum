@@ -63,5 +63,5 @@ def run(host, ports_list=[80, 443], n_threads=1):
         res = thread.join()
         results.extend(res)
     
-    print(f"[+] Valid Web Server Ports are: {results}")
+    print(f"[+] Valid Web Server Ports are: {', '.join([str(p) for p in results]).strip()}")
     return {'web_ports': results}
