@@ -15,7 +15,7 @@ The Automated Web Application Enumeration Tool is a command-line tool that autom
 - [x] Directory Busting
 - [x] Virtual Host Enumeration
 - [ ] API Fuzzing
-Many more features coming soon...
+- Many more features coming soon...
 
 ## Installation
 
@@ -43,6 +43,12 @@ docker pull abhirambsn/wapp-enum:latest
 ```
 
 2. Run the container
+
+**Things to remember:**
+
+1. `path_to_store_on_result` is necessary as all the scans and files will be store here, it is a path on the host computer.
+2. `wordlist_path_on_host` is the directory containing all the necessary wordlist files, the container will access the wordlists from here only and no other path will work.
+3. `wordlist_path_on_container` is the directory on the container where the files of `wordlist_path_on_host` will be accessible, example, if `./wordlists:/app/wordlists` is given, then your wordlist path will be `/app/wordlists/<file>`
 
 ```sh
 docker run -v <path_to_store_result>:/result <wordlist_path_on_host>:<wordlist_path_on_container> [--net host] -it abhirambsn/wapp-enum:latest <arguments here>
