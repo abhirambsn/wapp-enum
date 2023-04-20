@@ -3,6 +3,8 @@ import requests
 import sys
 import os
 
+from utils.print import print_success, print_error, print_process_step
+
 file_lock = threading.Lock()
 
 def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
@@ -18,7 +20,7 @@ def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
         else:
             return False, None, None
     except requests.ConnectionError as e:
-        print(f"[x] Connection Error")
+        print_error(f"Connection Error")
         sys.exit(-1)
         
 
@@ -28,7 +30,7 @@ def threaded_request(thread_index, res_file, host, wordlist, success_codes=[200,
         path_striped = path.strip('\n')
         req = request_url(host, path_striped, success_codes, filter_codes)
         if req[0]:
-            print(f"[+][Thread: {thread_index}] Found: {req[2]}\tStatus Code: {req[1]}")
+            print_success(f"[Thread: {thread_index}] Found: {req[2]}\tStatus Code: {req[1]}")
             file_lock.acquire()
             res_file.write(f"{req[2]}\t\tCode:{req[1]}\r\n")
             file_lock.release()
@@ -53,5 +55,5 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
         thread.join()
     
     f.close()
-    print(f"[-] Processed {len(wordlist)} paths")
-    print(f"[+] Directory Enumeration Done")
+    print_process_step(f"Processed {len(wordlist)} paths")
+    print_success(f"Directory Enumeration Done")

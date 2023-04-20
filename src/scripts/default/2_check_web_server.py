@@ -2,6 +2,8 @@ import socket
 import threading
 import sys
 
+from utils.print import print_success, print_error, print_process_step, print_warning
+
 class ThreadWithReturnValue(threading.Thread):
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, Verbose=None):
         super().__init__(group, target, name, args, kwargs)
@@ -40,7 +42,7 @@ def check_batch(host, ports=[]):
     for port in ports:
         (status, port_val) = check_port(host, port)
         if status:
-            print(f"[+] Port {port_val} is a WebServer")
+            print_success(f"Port {port_val} is a WebServer")
             results.append(port_val)
     return results
 
@@ -51,7 +53,7 @@ def run(host, ports_list=[80, 443], n_threads=1):
     t_count = n_threads
 
     if (len(ports_list) <= 0):
-        print("[+] No Ports are Open!!")
+        print_warning("No Ports are Open!!")
         sys.exit(0)
     if len(ports_list) < n_threads:
         t_count = len(ports_list)
@@ -68,5 +70,5 @@ def run(host, ports_list=[80, 443], n_threads=1):
         res = thread.join()
         results.extend(res)
     
-    print(f"[+] Valid Web Server Ports are: {', '.join([str(p) for p in results]).strip()}")
+    print_success(f"Valid Web Server Ports are: {', '.join([str(p) for p in results]).strip()}")
     return {'web_ports': results}

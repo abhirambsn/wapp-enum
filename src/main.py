@@ -6,15 +6,22 @@ import os
 import sys
 
 from script_parser import ScriptParser
+from utils.checks import chk_docker
+from utils.logger import error_log, info_log
+from utils.print import print_error, print_success, print_info_dim, print_warning, print_process_step
+from utils.loader import LoaderQueue
+
+from rich.progress import Progress
 
 default_scripts = []
 custom_scripts = []
+
 
 def register_default_scripts():
     for j in [f for f in os.listdir("./scripts/default") if os.path.isfile('./scripts/default/'+f)]:
         ipath = f'scripts/default/{j[:-3]}'
         default_scripts.append(ScriptParser(j[:-3], ipath))
-        print(f"[+] Registering Script {j[:-3]}")
+        print_info_dim(f"Registering Script {j[:-3]}")
 
 def register_custom_scripts():
     c_scripts = [f for f in os.listdir("./scripts/custom") if os.path.isfile('./scripts/custom/'+f)]
@@ -22,27 +29,30 @@ def register_custom_scripts():
     for j in c_scripts:
         ipath = f'scripts/custom/{j[:-3]}'
         custom_scripts.append(ScriptParser(j[:-3], ipath))
-        print(f"[+] Registering Custom Script {j[:-3]}")
+        print_info_dim(f"Registering Custom Script {j[:-3]}")
 
-def port_thread(thread_idx, port, kwargs):
-    p_threads = []
-    print(f"[*] Started Thread:{thread_idx} for port {port}")
+def find_script(name):
+    for cs in custom_scripts:
+        if cs.name == name:
+            return cs
+    return None
+
+def port_thread(thread_idx, port, kwargs, scripts_to_run=custom_scripts):
+    custom_lq = LoaderQueue()
+    print_process_step(f"Started Thread:{thread_idx} for port {port}")
     try:
-        for custom_script in custom_scripts:
-            thread = threading.Thread(target=custom_script.run, kwargs=kwargs)
-            p_threads.append(thread)
+        for script in scripts_to_run:
+            custom_script = find_script(script)
+            if custom_script is None:
+                print_error(f"Script: {script} not found")
+                sys.exit(1)
+            custom_lq.add_task(f"Running Custom Script: {custom_script.name}", custom_script.run, kwargs=kwargs)
+        custom_lq.execute_threaded()
 
-        for p_thread in p_threads:
-            p_thread.start()
-            p_thread.join()
     except Exception as e:
-        print(f"[x] Error: {e}")
+        print_error(f"Error: {e}")
+        error_log(__name__, str(e))
         sys.exit(1)
-
-def chk_docker():
-    if os.path.exists('/.dockerenv'):
-        return True
-    return False
 
 def main():
     # Register All Scripts
@@ -51,21 +61,52 @@ def main():
 
     # Parse Data
     # TODO: Take inputs in the form of arguments
-    project_name  = input("Enter Project Name:")
-    ip = input("Enter IP Address of the WebApp:")
-    wordlist = input("Enter Wordlist Path:")
+
+    import argparse
+    parser = argparse.ArgumentParser(prog="WappEnum", description="")
+    parser.add_argument("project_name")
+    parser.add_argument("ip")
+    parser.add_argument("-H", '--hostname', type=str, default=None)
+    parser.add_argument('-w', '--wordlist', default="/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt")
+    parser.add_argument('-v', '--vhosts', default="/usr/share/seclists/Discovery/test.txt")
+    parser.add_argument('-mc', '--match-code', type=int, nargs='+', default=[200,301,302,500])
+    parser.add_argument('-fc', '--filter-code', type=int, nargs='+', default=[404])
+    parser.add_argument('-t', '--threads', type=int, default=4)
+    parser.add_argument('--no-default-scripts', action='store_true')
+    parser.add_argument('-s', '--scripts', type=str, nargs='+', default=[])
+    parser.add_argument('-P', '--ports', type=int, nargs='+', default=[80,443])
+    parser.add_argument('-lc', '--list-custom-scripts', action='store_true')
+    parser.add_argument('-a', '--all', action='store_true')
+
+    args = parser.parse_args()
+
+    if args.list_custom_scripts:
+        ctr = 1
+        print_success("Available Custom Scripts")
+        for custom_script in custom_scripts:
+            print(f"{ctr}. {custom_script.name}")
+            ctr += 1
+        sys.exit(0)
+
+    project_name  = args.project_name
+    ip = args.ip
+    wordlist = args.wordlist
 
     docker = chk_docker()
     dir = None
     if not docker:
-        print("[!] Not Running in a Docker Environment using current directory for creating folders")
+        print_warning("Not Running in a Docker Environment using current directory for creating folders")
+        info_log(__name__, "Not Running in a Docker Environment")
         dir = os.getcwd()
     else:
-        print("[!] Running in a Docker Container, using Root Directory (/)")
-        os.mkdir("/result")
+        print_warning("Running in a Docker Container, using Root Directory (/)")
+        info_log(__name__, "Running in a Docker Environment")
+        if not os.path.exists("/result"):
+            print_warning("/result directory was not bind by the user, creating it on container, You will not be able to access the reports if not bound to a host directory")
+            os.mkdir("/result")
         dir = "/result"
     
-    project_directory = dir + f"/{project_name}"
+    project_directory = dir + f"/{project_name}" if not docker else dir
     if not os.path.exists(project_directory):
         os.mkdir(project_directory)
     os.chdir(project_directory)  
@@ -73,34 +114,42 @@ def main():
     threads = []
     kwargs = {
         'host': ip,
-        'n_threads': 4,
+        'n_threads': args.threads,
         'project_name': project_name,
         'wordlist': wordlist,
-        'success_codes':[200,301,302], 
-        'filter_codes':[]
+        'success_codes':args.match_code, 
+        'filter_codes':args.filter_code
     }
 
     # Run Default Scripts in Sequence
-    for default_script in default_scripts:
-        retval = default_script.run(**kwargs)
-        if retval is not None:
+    if not args.no_default_scripts:
+        lq = LoaderQueue()
+        for default_script in default_scripts:
+            lq.add_task(f"Running Script: {default_script.name}", default_script.run, kwargs=kwargs)
+        lq.execute()
+
+        retvals = lq.get_return_values()
+        for retval in retvals:
             kwargs.update(retval)
 
     # Run Custom Scripts Parallely, Custom Scripts will run per port
 
-    ports = kwargs['web_ports']
+    ports = list(set(kwargs.get('web_ports', []) + args.ports))
+    scripts_to_run = args.scripts if not args.all else [cs.name for cs in custom_scripts]
 
     for port in ports:
         new_kwargs = dict(kwargs)
         new_kwargs['port'] = port
         new_kwargs['host'] = 'http://'+kwargs['host']
-        thread = threading.Thread(target=port_thread, args=(len(threads)+1, port, new_kwargs))
+        thread = threading.Thread(target=port_thread, args=(len(threads)+1, port, new_kwargs, scripts_to_run))
         threads.append(thread)
     
     for t in threads:
         t.start()
         t.join()
 
+    if docker:
+        print_success(f"Successfully Completed Recon, Results are Stored at {os.path.join(os.getcwd(), project_directory)}")
 
 if __name__ == "__main__":
     main()

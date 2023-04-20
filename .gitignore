@@ -3,3 +3,4 @@ test_wordlist.txt
 test/
 *.csv
 .vscode/
+test_vhost.txt
