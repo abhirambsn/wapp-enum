@@ -1,2 +1,0 @@
-Vhost: http://name.local.htb	Port: 80
-Vhost: http://name.local.htb	Port: 443
