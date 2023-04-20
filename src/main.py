@@ -4,6 +4,7 @@
 import threading
 import os
 import sys
+import argparse
 
 from script_parser import ScriptParser
 from utils.checks import chk_docker
@@ -60,9 +61,7 @@ def main():
     register_custom_scripts()
 
     # Parse Data
-    # TODO: Take inputs in the form of arguments
 
-    import argparse
     parser = argparse.ArgumentParser(prog="WappEnum", description="")
     parser.add_argument("project_name", help="Name of the project/pentest")
     parser.add_argument("ip", help="IP Address of the vulnerable server/host")
