@@ -52,7 +52,7 @@ docker pull abhirambsn/wapp-enum:latest
     5. If you have any custom hostnames in your host\'s `/etc/hosts` file then kindly add those by adding those in this format `--add-host <hostname>:<ip>` after the `--net host` option
 
 ```sh
-docker run -v <path_to_store_result>:/result <wordlist_path_on_host>:<wordlist_path_on_container> [--net host] -it abhirambsn/wapp-enum:latest <arguments here>
+docker run -v <path_to_store_result>:/result <wordlist_path_on_host>:<wordlist_path_on_container> --net host -it abhirambsn/wapp-enum:latest <arguments here>
 ```
 
 ### Via Repo
