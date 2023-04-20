@@ -118,7 +118,9 @@ def main():
         'project_name': project_name,
         'wordlist': wordlist,
         'success_codes':args.match_code, 
-        'filter_codes':args.filter_code
+        'filter_codes':args.filter_code,
+        'vhost_path': args.vhosts,
+        'hostname': args.hostname
     }
 
     # Run Default Scripts in Sequence
