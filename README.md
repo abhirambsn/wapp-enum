@@ -13,8 +13,9 @@ The Automated Web Application Enumeration Tool is a command-line tool that autom
 - [x] Nmap Scan
 - [x] Nikto Scan
 - [x] Directory Busting
+- [x] Virtual Host Enumeration
 - [ ] API Fuzzing
-- [ ] Virtual Host Enumeration
+Many more features coming soon...
 
 ## Installation
 
@@ -44,7 +45,7 @@ docker pull abhirambsn/wapp-enum:latest
 2. Run the container
 
 ```sh
-docker run -it --name abhirambsn/wapp-enum:latest <arguments here>
+docker run -v <path_to_store_result>:/result <wordlist_path_on_host>:<wordlist_path_on_container> [--net host] -it abhirambsn/wapp-enum:latest <arguments here>
 ```
 
 ### Via Repo
