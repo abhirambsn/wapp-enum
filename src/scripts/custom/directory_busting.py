@@ -2,6 +2,7 @@ import threading
 import requests
 import sys
 import os
+import time
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils.print import print_success, print_error, print_process_step
@@ -12,7 +13,6 @@ file_lock = threading.Lock()
 def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
     try:
         path_s = path.strip('\n')
-        print(f"Trying Path: /{path_s}")
         r = requests.get(url+'/'+path.strip('\n'))
         status_code = r.status_code
 
@@ -28,7 +28,8 @@ def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
         sys.exit(-1)
         
 
-def threaded_request(res_file, host, wordlist, success_codes=[200,301,302], filter_codes=[], n_threads=4):
+def threaded_request(batch_id, res_file, host, wordlist, success_codes=[200,301,302], filter_codes=[], n_threads=4):
+    print_process_step(f"Processing Batch {batch_id}")
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         future_urls = {executor.submit(request_url, host, path.strip('\n'), success_codes, filter_codes): path for path in wordlist}
         for future in as_completed(future_urls):
@@ -64,15 +65,18 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
     batches = [wordlist_file[i:i+batch_size] for i in range(0, len(wordlist_file), batch_size)]
     # thread_pool = []
 
+    init_time = time.time()
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         url = host + ":" + str(port)
-        batch_proc = {executor.submit(threaded_request, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
+        batch_proc = {executor.submit(i+1, threaded_request, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
 
         for proc in batch_proc:
             try:
                 proc.result()
             except Exception as e:
                 print_error(f"Parent Thread Error: {str(e)}")
+    
+    end_time = time.time()
 
     # for i in range(n_threads):
     #     url = host + ":" + str(port)
@@ -85,4 +89,4 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
     
     f.close()
     print_process_step(f"Processed {len(wordlist_file)} paths")
-    print_success(f"Directory Enumeration Done")
+    print_success(f"Directory Enumeration Done, Time Taken: {end_time - init_time}")
