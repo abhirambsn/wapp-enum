@@ -73,6 +73,7 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
             try:
                 proc.result()
             except Exception as e:
+                raise
                 print_error(f"Parent Thread Error: {e}")
     
     end_time = time.time()
