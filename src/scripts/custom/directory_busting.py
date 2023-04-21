@@ -69,7 +69,7 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
         url = host + ":" + str(port)
         batch_proc = {executor.submit(i+1, threaded_request, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
 
-        for proc in batch_proc:
+        for proc in as_completed(batch_proc):
             try:
                 proc.result()
             except Exception as e:
