@@ -11,6 +11,7 @@ file_lock = threading.Lock()
 
 def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
     try:
+        print(f"Trying Path: /{path.strip('\n')}")
         r = requests.get(url+'/'+path.strip('\n'))
         status_code = r.status_code
 
@@ -64,12 +65,13 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
 
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         url = host + ":" + str(port)
-        for batch in batches:
-            proc = executor.submit(threaded_request, f, url, batch, success_codes, filter_codes)
+        batch_proc = {executor.submit(threaded_request, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
+
+        for proc in batch_proc:
             try:
                 proc.result()
             except Exception as e:
-                print_error(f"ERROR-Parent Thread: {str(e)}")
+                print_error(f"Parent Thread Error: {str(e)}")
 
     # for i in range(n_threads):
     #     url = host + ":" + str(port)
