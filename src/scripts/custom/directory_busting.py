@@ -11,7 +11,8 @@ file_lock = threading.Lock()
 
 def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
     try:
-        print(f"Trying Path: /{path.strip('\n')}")
+        path_s = path.strip('\n')
+        print(f"Trying Path: /{path_s}")
         r = requests.get(url+'/'+path.strip('\n'))
         status_code = r.status_code
 
