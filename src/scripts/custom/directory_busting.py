@@ -67,13 +67,12 @@ def run(host, port, wordlist="", n_threads=4, success_codes=[200,301,302], filte
     init_time = time.time()
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         url = host + ":" + str(port)
-        batch_proc = {executor.submit(i+1, threaded_request, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
+        batch_proc = {executor.submit(threaded_request, i+1, f, url, batches[i], success_codes, filter_codes): i for i in range(len(batches))}
 
         for proc in as_completed(batch_proc):
             try:
                 proc.result()
             except Exception as e:
-                raise
                 print_error(f"Parent Thread Error: {e}")
     
     end_time = time.time()
