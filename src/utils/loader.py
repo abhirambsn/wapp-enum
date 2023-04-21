@@ -21,20 +21,21 @@ class LoaderQueue:
             'task_id': None
         })
     
-    def threaded(self, progress, task, batch_size, start=0):
+    def threaded(self, progress, task, batch, start=0):
         completed = 0
-        for i in range(len(self.tasks[start: start + batch_size])):
-            progress.update(task, description=self.tasks[start+i]['label'])
+        for i in range(len(batch)):
+            main_idx = batch.index(batch[i])
+            progress.update(task, description=batch[i]['label'])
             retval = None
-            if (self.tasks[i]['args'] is None and self.tasks[start+i]['kwargs'] is not None):
-                retval = self.tasks[i]['fn'](**self.tasks[start+i]['kwargs'])
-            elif (self.tasks[i]['args'] is not None and self.tasks[start+i]['kwargs'] is None):
-                retval = self.tasks[i]['fn'](*self.tasks[start+i]['args'])
-            elif (self.tasks[i]['args'] is None and self.tasks[start+i]['kwargs'] is None):
-                retval = self.tasks[start+i]['fn']()
+            if (batch[i]['args'] is None and self.tasks[main_idx]['kwargs'] is not None):
+                retval = batch[i]['fn'](**self.tasks[main_idx]['kwargs'])
+            elif (batch[i]['args'] is not None and self.tasks[main_idx]['kwargs'] is None):
+                retval = batch[i]['fn'](*self.tasks[main_idx]['args'])
+            elif (batch[i]['args'] is None and self.tasks[main_idx]['kwargs'] is None):
+                retval = self.tasks[main_idx]['fn']()
             else:
-                retval = self.tasks[start+i]['fn'](*self.tasks[i]['args'], **self.tasks[i]['kwargs'])
-            self.tasks[i]['retval'] = retval
+                retval = self.tasks[main_idx]['fn'](*batch[i]['args'], **batch[i]['kwargs'])
+            self.tasks[main_idx]['retval'] = retval
             completed += 1
             progress.update(task, advance=((start+completed)/len(self.tasks))*100, total=100)
 
