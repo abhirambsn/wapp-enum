@@ -61,7 +61,7 @@ class LoaderQueue:
                         except Exception as e:
                             print_error(f"ERROR: {e}")
                             error_log(__name__, str(e))
-                self.executed = True
+            self.executed = True
 
                 # for i in range(n_threads):
                 #     task = progress.add_task(initial_label + f" Thread: {i+1}", total=None)
@@ -71,7 +71,7 @@ class LoaderQueue:
                 # for t in threads:
                 #     t.start()
                 #     t.join()
-            self.executed = True
+            # self.executed = True
         except Exception as e:
             print_error(f"ERROR: {e}")
             error_log(__name__, str(e))
