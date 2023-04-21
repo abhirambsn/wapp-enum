@@ -28,19 +28,20 @@ def request_url(url, path, success_codes=[200,301,302], filter_codes=[]):
         
 
 def threaded_request(batch_id, res_file, host, wordlist, success_codes=[200,301,302], filter_codes=[], n_threads=4):
-    print_process_step(f"Processing Batch {batch_id}")
+    print_process_step(f"Queued Batch {batch_id}")
     with ThreadPoolExecutor(max_workers=n_threads) as executor:
         future_urls = {executor.submit(request_url, host, path.strip('\n'), success_codes, filter_codes): path for path in wordlist}
         for future in as_completed(future_urls):
             try:
                 (found, url, code) = future.result()
                 if found:
-                    print_success(f"Found: {url}\tStatus Code: {code}")
+                    print_success(f"[Batch: {batch_id}] Found: {url}\tStatus Code: {code}")
                     file_lock.acquire()
                     res_file.write(f"{url}\t\tCode:{code}\r\n")
                     file_lock.release()
             except Exception as e:
                 print_error(f"ERROR: {str(e)}")
+    print_process_step(f"Successfully Processed Batch {batch_id}")
     # for path in wordlist:
     #     path_striped = path.strip('\n')
     #     req = request_url(host, path_striped, success_codes, filter_codes)
