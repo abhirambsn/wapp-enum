@@ -2,6 +2,8 @@ from rich.progress import Progress
 from .print import print_error
 from .logger import error_log
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import threading
 
 class LoaderQueue:
@@ -38,19 +40,36 @@ class LoaderQueue:
 
     def execute_threaded(self, initial_label="", n_threads=1):
         try:
-            threads = []
+            # threads = []
             with Progress(transient=True) as progress:
                 if len(self.tasks) < n_threads:
                     n_threads = len(self.tasks)
                 batch_size = len(self.tasks) // n_threads
-                for i in range(n_threads):
-                    task = progress.add_task(initial_label + f" Thread: {i+1}", total=None)
-                    t = threading.Thread(target=self.threaded, args=(progress, task, batch_size, batch_size*i))
-                    threads.append(t)
+
+                batches = [self.tasks[i:i+batch_size] for i in range(0, len(self.tasks), batch_size)]
+                tasks = []
+                for i in range(len(batches)):
+                    task = progress.add_task(initial_label + f" Batch: {i+1}", total=None)
+                    tasks.append(task)
+
+                with ThreadPoolExecutor(max_workers=n_threads) as executor:
+                    procs = {executor.submit(self.threaded, progress, tasks[i], batches[i]): i for i in range(len(batches))}
+                    for future in as_completed(procs):
+                        try:
+                            future.result()
+                        except Exception as e:
+                            print_error(f"ERROR: {e}")
+                            error_log(__name__, str(e))
+                self.executed = True
+
+                # for i in range(n_threads):
+                #     task = progress.add_task(initial_label + f" Thread: {i+1}", total=None)
+                #     t = threading.Thread(target=self.threaded, args=(progress, task, batch_size, batch_size*i))
+                #     threads.append(t)
                 
-                for t in threads:
-                    t.start()
-                    t.join()
+                # for t in threads:
+                #     t.start()
+                #     t.join()
             self.executed = True
         except Exception as e:
             print_error(f"ERROR: {e}")
