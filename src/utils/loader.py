@@ -37,7 +37,7 @@ class LoaderQueue:
                 retval = self.tasks[main_idx]['fn'](*batch[i]['args'], **batch[i]['kwargs'])
             self.tasks[main_idx]['retval'] = retval
             completed += 1
-            progress.update(task, advance=((start+completed)/len(self.tasks))*100, total=100)
+            progress.update(task, advance=((completed)/len(batch))*100, total=100)
 
     def execute_threaded(self, initial_label="", n_threads=1):
         try:
