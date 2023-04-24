@@ -103,6 +103,7 @@ class LoaderQueue:
                         progress.update(task, advance=(completed/len(self.tasks))*100)
             self.executed = True
         except Exception as e:
+            raise
             print_error(f"ERROR: {e}")
             error_log(__name__, str(e))
     

@@ -19,7 +19,7 @@ custom_scripts = []
 
 
 def register_default_scripts():
-    for j in [f for f in os.listdir("./scripts/default") if os.path.isfile('./scripts/default/'+f)]:
+    for j in [f for f in sorted(os.listdir("./scripts/default")) if os.path.isfile('./scripts/default/'+f)]:
         ipath = f'scripts/default/{j[:-3]}'
         default_scripts.append(ScriptParser(j[:-3], ipath))
         print_info_dim(f"Registering Script {j[:-3]}")
@@ -130,8 +130,11 @@ def main():
         lq.execute()
 
         retvals = lq.get_return_values()
-        for retval in retvals:
-            kwargs.update(retval)
+        if not retvals:
+            print_warning(f'No Values were returned, proceeding...')
+        else:
+            for retval in retvals:
+                kwargs.update(retval)
 
     # Run Custom Scripts Parallely, Custom Scripts will run per port
 

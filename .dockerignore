@@ -4,3 +4,4 @@ test/
 *.csv
 .vscode/
 test_vhost.txt
+test_server.py
