@@ -12,5 +12,5 @@ def print_warning(text):
 def print_info_dim(text):
     print(f"{Fore.BLUE}{Style.DIM}[-] {text}{Fore.RESET}{Style.RESET_ALL}")
 
-def print_process_step(text):
-    print(f"{Fore.CYAN}{Style.BRIGHT}[*] {text}{Fore.RESET}{Style.RESET_ALL}")
+def print_process_step(text, inline=False):
+    print(f"{Fore.CYAN}{Style.BRIGHT}[*] {text}{Fore.RESET}{Style.RESET_ALL}", end='\n' if not inline else '\r')
